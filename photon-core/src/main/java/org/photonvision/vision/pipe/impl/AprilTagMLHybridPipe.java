@@ -93,6 +93,37 @@ public class AprilTagMLHybridPipe
         return roiDetectionPipe.isAvailable();
     }
 
+    /**
+     * Runs only the decode stage against caller-supplied ROIs, skipping {@link
+     * AprilTagROIDetectionPipe} (and therefore the NPU) entirely. Used by {@link TagRoiTracker} to
+     * decode tags at predicted locations on frames where a full detection pass isn't needed.
+     *
+     * <p>Reuses this instance's already-configured {@code roiDecodePipe}, so decode parameters
+     * (tag family, hamming distance, ATR settings, etc.) always match whatever the last {@link
+     * #setParams} call configured for the full-detection path.
+     *
+     * @param frame the current frame; only {@code frame.processedImage} (single-channel) is used
+     * @param rois predicted search regions, already expanded/padded by the caller
+     * @return a result shaped like {@link #run}'s, so callers can handle both paths identically
+     */
+    public CVPipe.CVPipeResult<MLDetectionResult> decodeAt(Frame frame, List<RotatedRect> rois) {
+        CVPipe.CVPipeResult<MLDetectionResult> wrapped = new CVPipe.CVPipeResult<>();
+
+        if (rois.isEmpty()) {
+            wrapped.output = new MLDetectionResult(new ArrayList<>(), List.of());
+            wrapped.nanosElapsed = 0;
+            return wrapped;
+        }
+
+        AprilTagROIDecodePipe.ROIDecodeInput decodeInput =
+                new AprilTagROIDecodePipe.ROIDecodeInput(frame.processedImage, rois);
+        CVPipe.CVPipeResult<List<AprilTagDetection>> decodeResult = roiDecodePipe.run(decodeInput);
+
+        wrapped.output = new MLDetectionResult(decodeResult.output, rois);
+        wrapped.nanosElapsed = decodeResult.nanosElapsed;
+        return wrapped;
+    }
+
     @Override
     public void release() {
         roiDetectionPipe.release();

@@ -18,7 +18,6 @@
 package org.photonvision.vision.pipeline;
 
 import java.util.List;
-import org.opencv.core.RotatedRect;
 import org.photonvision.vision.frame.Frame;
 import org.photonvision.vision.frame.FrameStaticProperties;
 import org.photonvision.vision.opencv.DualOffsetValues;
@@ -128,7 +127,7 @@ public class OutputStreamPipeline {
             Frame inputAndOutputFrame,
             AdvancedPipelineSettings settings,
             List<TrackedTarget> targetsToDraw,
-            List<RotatedRect> mlDetectionRois) {
+            List<DetectionRoi> mlDetectionRois) {
         setPipeParams(inputAndOutputFrame.frameStaticProperties, settings);
         var inMat = inputAndOutputFrame.colorImage.getMat();
         var outMat = inputAndOutputFrame.processedImage.getMat();

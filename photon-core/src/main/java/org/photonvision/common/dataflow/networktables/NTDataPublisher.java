@@ -226,6 +226,7 @@ public class NTDataPublisher implements CVPipelineResultConsumer {
         ts.enabledPublisher.set(enabledSupplier.getAsBoolean());
         ts.latencyMillisEntry.set(acceptedResult.getLatencyMillis());
         ts.fpsEntry.set(acceptedResult.fps);
+        ts.lookaheadHitRateEntry.set(acceptedResult.lookaheadHitRate);
         ts.hasTargetEntry.set(acceptedResult.hasTargets());
 
         if (acceptedResult.hasTargets()) {

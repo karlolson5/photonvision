@@ -100,6 +100,89 @@ public class AprilTagPipelineMLFlagSafetyTest {
     }
 
     /**
+     * Test that Lookahead settings are properly handled in pipeline settings equality/hashCode.
+     * Mirrors {@link #testMLSettingsEquality} for the four fields added alongside the temporal ROI
+     * prediction feature.
+     */
+    @Test
+    public void testLookaheadSettingsEquality() {
+        var settings1 = new AprilTagPipelineSettings();
+        var settings2 = new AprilTagPipelineSettings();
+
+        assertEquals(settings1, settings2);
+        assertEquals(settings1.hashCode(), settings2.hashCode());
+
+        settings1.useLookahead = true;
+        assertNotEquals(settings1, settings2);
+
+        settings2.useLookahead = true;
+        assertEquals(settings1, settings2);
+        assertEquals(settings1.hashCode(), settings2.hashCode());
+
+        settings1.lookaheadPaddingPixels = 100;
+        assertNotEquals(settings1, settings2);
+
+        settings2.lookaheadPaddingPixels = 100;
+        assertEquals(settings1, settings2);
+
+        settings1.lookaheadMaxCoastFrames = 12;
+        assertNotEquals(settings1, settings2);
+
+        settings2.lookaheadMaxCoastFrames = 12;
+        assertEquals(settings1, settings2);
+
+        settings1.lookaheadRescanIntervalFrames = 90;
+        assertNotEquals(settings1, settings2);
+
+        settings2.lookaheadRescanIntervalFrames = 90;
+        assertEquals(settings1, settings2);
+        assertEquals(settings1.hashCode(), settings2.hashCode());
+    }
+
+    /**
+     * Test that enabling Lookahead alongside ML detection on a platform without an NPU doesn't
+     * crash -- {@code mlAvailable} is false, so {@code process()} should never reach the lookahead
+     * branch and should behave exactly like {@link #testTraditionalDetectionWhenMLDisabled}, with
+     * {@code lookaheadHitRate} staying at 0.0 the whole time.
+     */
+    @Test
+    public void testLookaheadEnabledOnNonNpuPlatformDoesNotCrash() {
+        var pipeline = new AprilTagPipeline();
+
+        pipeline.getSettings().useMLDetection = true;
+        pipeline.getSettings().useLookahead = true;
+        pipeline.getSettings().inputShouldShow = true;
+        pipeline.getSettings().outputShouldDraw = true;
+        pipeline.getSettings().solvePNPEnabled = true;
+        pipeline.getSettings().targetModel = TargetModel.kAprilTag6p5in_36h11;
+        pipeline.getSettings().tagFamily = AprilTagFamily.kTag36h11;
+
+        var frameProvider =
+                new FileFrameProvider(
+                        TestUtils.getApriltagImagePath(TestUtils.ApriltagTestImages.kTag1_640_480, false),
+                        TestUtils.WPI2020Image.FOV,
+                        TestUtils.get2020LifeCamCoeffs(false));
+        frameProvider.requestFrameThresholdType(pipeline.getThresholdType());
+
+        // Run a few frames -- not just one -- since the lookahead branch and its frame-size-change
+        // check only matter across multiple calls to process(). A single frame would pass even if
+        // the multi-frame bookkeeping were broken.
+        CVPipelineResult pipelineResult = null;
+        for (int i = 0; i < 3; i++) {
+            pipelineResult = pipeline.run(frameProvider.get(), QuirkyCamera.DefaultCamera);
+        }
+
+        assertFalse(pipelineResult.targets.isEmpty(), "Should detect tag via traditional fallback");
+        assertEquals(1, pipelineResult.targets.size(), "Should detect exactly one tag");
+        assertEquals(
+                0.0,
+                pipelineResult.lookaheadHitRate,
+                "Lookahead never ran (no NPU), hit rate should stay 0.0");
+
+        pipeline.release();
+    }
+
+    /**
      * Test that the pipeline still detects tags when ML detection is enabled on a platform without ML
      * support (e.g., no NPU). In that case the pipeline uses traditional detection.
      */

@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
-import org.opencv.core.RotatedRect;
 import org.opencv.core.Size;
+import org.photonvision.vision.pipe.impl.DetectionRoi;
 import org.photonvision.common.configuration.CameraConfiguration;
 import org.photonvision.common.configuration.ConfigManager;
 import org.photonvision.common.dataflow.CVPipelineResultConsumer;
@@ -242,7 +242,7 @@ public class VisionModule {
         private Frame latestFrame;
         private AdvancedPipelineSettings settings = new AdvancedPipelineSettings();
         private List<TrackedTarget> targets = new ArrayList<>();
-        private List<RotatedRect> latestMlRois = List.of();
+        private List<DetectionRoi> latestMlRois = List.of();
 
         private boolean shouldRun = false;
 
@@ -254,7 +254,7 @@ public class VisionModule {
                 Frame inputOutputFrame,
                 AdvancedPipelineSettings settings,
                 List<TrackedTarget> targets,
-                List<RotatedRect> mlDetectionRois) {
+                List<DetectionRoi> mlDetectionRois) {
             synchronized (frameLock) {
                 if (shouldRun && this.latestFrame != null) {
                     logger.trace("Fell behind; releasing last unused Mats");
@@ -280,7 +280,7 @@ public class VisionModule {
                 final Frame m_frame;
                 final AdvancedPipelineSettings settings;
                 final List<TrackedTarget> targets;
-                final List<RotatedRect> mlRois;
+                final List<DetectionRoi> mlRois;
                 final boolean shouldRun;
                 synchronized (frameLock) {
                     m_frame = this.latestFrame;

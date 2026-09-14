@@ -283,6 +283,11 @@ export interface AprilTagPipelineSettings extends PipelineSettings {
   mlRoiPaddingPixels: number;
   model: ObjectDetectionModelProperties;
   showDetectionBoxes: boolean;
+  // Lookahead (temporal ROI prediction) settings
+  useLookahead: boolean;
+  lookaheadPaddingPixels: number;
+  lookaheadMaxCoastFrames: number;
+  lookaheadRescanIntervalFrames: number;
 }
 export type ConfigurableAprilTagPipelineSettings = Partial<
   Omit<AprilTagPipelineSettings, "pipelineType" | "hammingDist" | "debug">
@@ -313,7 +318,12 @@ export const DefaultAprilTagPipelineSettings: AprilTagPipelineSettings = {
   mlNmsThreshold: 0.45,
   mlRoiPaddingPixels: 40,
   model: {} as ObjectDetectionModelProperties,
-  showDetectionBoxes: true
+  showDetectionBoxes: true,
+  // Lookahead defaults
+  useLookahead: false,
+  lookaheadPaddingPixels: 60,
+  lookaheadMaxCoastFrames: 6,
+  lookaheadRescanIntervalFrames: 30
 };
 
 export interface ArucoPipelineSettings extends PipelineSettings {

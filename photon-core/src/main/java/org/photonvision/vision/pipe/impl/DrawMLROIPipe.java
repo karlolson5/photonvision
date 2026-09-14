@@ -26,14 +26,18 @@ import org.wpilib.math.util.Pair;
 
 /**
  * Draws ML detection ROI bounding boxes on the output image. Used to visualize where the ML model
- * detected potential targets before traditional decoding.
+ * detected potential targets before traditional decoding, and to distinguish those from boxes
+ * that came from {@link TagRoiTracker}'s lookahead prediction instead of a fresh NPU call.
  */
 public class DrawMLROIPipe
-        extends MutatingPipe<Pair<Mat, List<RotatedRect>>, DrawMLROIPipe.DrawMLROIParams> {
-    private static final Scalar ROI_COLOR = new Scalar(255, 255, 0); // Cyan in BGR
+        extends MutatingPipe<Pair<Mat, List<DetectionRoi>>, DrawMLROIPipe.DrawMLROIParams> {
+    // Cyan in BGR -- a box the NPU actually produced this frame.
+    private static final Scalar ML_DETECTED_COLOR = new Scalar(255, 255, 0);
+    // Magenta in BGR -- a box TagRoiTracker predicted; the NPU was not called this frame.
+    private static final Scalar PREDICTED_COLOR = new Scalar(255, 0, 255);
 
     @Override
-    protected Void process(Pair<Mat, List<RotatedRect>> in) {
+    protected Void process(Pair<Mat, List<DetectionRoi>> in) {
         if (!params.shouldDraw || !params.showDetectionBoxes) return null;
 
         var mat = in.getFirst();
@@ -44,7 +48,12 @@ public class DrawMLROIPipe
         var thickness = (int) Math.ceil(imageSize * 0.007);
 
         Point[] corners = new Point[4];
-        for (RotatedRect roi : rois) {
+        for (DetectionRoi detectionRoi : rois) {
+            var roi = detectionRoi.rect();
+            var color =
+                    detectionRoi.source() == DetectionRoi.Source.PREDICTED
+                            ? PREDICTED_COLOR
+                            : ML_DETECTED_COLOR;
             roi.points(corners);
             double d = params.divisor.value;
             MatOfPoint scaled =
@@ -53,7 +62,7 @@ public class DrawMLROIPipe
                             new Point(corners[1].x / d, corners[1].y / d),
                             new Point(corners[2].x / d, corners[2].y / d),
                             new Point(corners[3].x / d, corners[3].y / d));
-            Imgproc.polylines(mat, List.of(scaled), true, ROI_COLOR, thickness);
+            Imgproc.polylines(mat, List.of(scaled), true, color, thickness);
         }
 
         return null;

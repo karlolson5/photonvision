@@ -20,7 +20,7 @@ package org.photonvision.vision.pipeline.result;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.opencv.core.RotatedRect;
+import org.photonvision.vision.pipe.impl.DetectionRoi;
 import org.photonvision.common.util.math.MathUtils;
 import org.photonvision.targeting.MultiTargetPNPResult;
 import org.photonvision.vision.frame.Frame;
@@ -36,7 +36,16 @@ public class CVPipelineResult implements Releasable {
     public final Frame inputAndOutputFrame;
     public Optional<MultiTargetPNPResult> multiTagResult;
     public final List<String> objectDetectionClassNames;
-    public final List<RotatedRect> mlDetectionRois;
+    public final List<DetectionRoi> mlDetectionRois;
+    /**
+     * Fraction of recent AprilTag-pipeline frames (with ML detection + lookahead enabled) that
+     * skipped the NPU detection pass and decoded at a {@link
+     * org.photonvision.vision.pipe.impl.TagRoiTracker}-predicted location instead. 0.0 if
+     * lookahead is disabled, unavailable, or no ML-detection frames have run yet. Set directly by
+     * the pipeline after construction -- not threaded through the constructors below, to avoid
+     * rippling a 9th parameter through every other pipeline type's result-construction call sites.
+     */
+    public double lookaheadHitRate = 0.0;
 
     public CVPipelineResult(
             long sequenceID,
@@ -118,7 +127,7 @@ public class CVPipelineResult implements Releasable {
             Optional<MultiTargetPNPResult> multiTagResult,
             Frame inputFrame,
             List<String> classNames,
-            List<RotatedRect> mlDetectionRois) {
+            List<DetectionRoi> mlDetectionRois) {
         this.sequenceID = sequenceID;
         this.processingNanos = processingNanos;
         this.fps = fps;

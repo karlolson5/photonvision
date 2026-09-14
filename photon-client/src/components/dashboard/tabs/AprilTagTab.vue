@@ -187,6 +187,63 @@ const supportedModels = computed<ObjectDetectionModelProperties[]>(() => {
             (value) => useCameraSettingsStore().changeCurrentPipelineSetting({ showDetectionBoxes: value }, false)
           "
         />
+
+        <!-- Lookahead (temporal ROI prediction) Section -->
+        <v-divider class="mt-3 mb-2" />
+        <p class="text-subtitle-2 mb-2">Lookahead</p>
+        <pv-switch
+          v-model="currentPipelineSettings.useLookahead"
+          :switch-cols="interactiveCols"
+          label="Enable Lookahead"
+          tooltip="Predicts tag locations from recent frames so most frames can skip the NPU detection pass entirely and decode directly at the predicted location. Falls back to a full ML-Tag pass automatically when a tag isn't found where predicted, when a tag hasn't been seen recently, or on a periodic rescan interval."
+          @update:modelValue="
+            (value) => useCameraSettingsStore().changeCurrentPipelineSetting({ useLookahead: value }, false)
+          "
+        />
+        <div v-if="currentPipelineSettings.useLookahead">
+          <pv-slider
+            v-model="currentPipelineSettings.lookaheadPaddingPixels"
+            :slider-cols="interactiveCols"
+            label="Lookahead ROI Padding (px)"
+            tooltip="Pixels of padding added around a predicted tag location before decoding. Larger than the ML-Tag ROI padding by default since a prediction is less certain than a fresh NPU detection"
+            :min="10"
+            :max="200"
+            :step="5"
+            @update:modelValue="
+              (value) =>
+                useCameraSettingsStore().changeCurrentPipelineSetting({ lookaheadPaddingPixels: value }, false)
+            "
+          />
+          <pv-slider
+            v-model="currentPipelineSettings.lookaheadMaxCoastFrames"
+            :slider-cols="interactiveCols"
+            label="Max Coast Frames"
+            tooltip="How many consecutive frames a tag may go unconfirmed by prediction before it's dropped and a full NPU rescan is triggered to reacquire it"
+            :min="0"
+            :max="30"
+            :step="1"
+            @update:modelValue="
+              (value) =>
+                useCameraSettingsStore().changeCurrentPipelineSetting({ lookaheadMaxCoastFrames: value }, false)
+            "
+          />
+          <pv-slider
+            v-model="currentPipelineSettings.lookaheadRescanIntervalFrames"
+            :slider-cols="interactiveCols"
+            label="Rescan Interval (frames)"
+            tooltip="Forces a full NPU detection pass at least this often, even when prediction tracking looks healthy, as a safety net against slowly-compounding prediction error"
+            :min="1"
+            :max="300"
+            :step="1"
+            @update:modelValue="
+              (value) =>
+                useCameraSettingsStore().changeCurrentPipelineSetting(
+                  { lookaheadRescanIntervalFrames: value },
+                  false
+                )
+            "
+          />
+        </div>
       </div>
     </div>
   </div>

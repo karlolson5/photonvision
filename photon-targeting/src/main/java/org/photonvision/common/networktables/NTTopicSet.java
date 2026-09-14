@@ -62,6 +62,7 @@ public class NTTopicSet {
 
     public DoublePublisher latencyMillisEntry;
     public DoublePublisher fpsEntry;
+    public DoublePublisher lookaheadHitRateEntry;
     public BooleanPublisher hasTargetEntry;
     public DoublePublisher targetPitchEntry;
     public DoublePublisher targetYawEntry;
@@ -119,6 +120,9 @@ public class NTTopicSet {
 
         latencyMillisEntry = subTable.getDoubleTopic("latencyMillis").publish();
         fpsEntry = subTable.getDoubleTopic("fps").publish();
+        // 0.0 whenever lookahead is off/unavailable, so consumers don't need to special-case
+        // "topic not present" vs. "feature not running" -- see AprilTagPipeline#lookaheadHitRate.
+        lookaheadHitRateEntry = subTable.getDoubleTopic("lookaheadHitRate").publish();
         hasTargetEntry = subTable.getBooleanTopic("hasTarget").publish();
 
         targetPitchEntry = subTable.getDoubleTopic("targetPitch").publish();
@@ -154,6 +158,7 @@ public class NTTopicSet {
 
         if (latencyMillisEntry != null) latencyMillisEntry.close();
         if (fpsEntry != null) fpsEntry.close();
+        if (lookaheadHitRateEntry != null) lookaheadHitRateEntry.close();
         if (hasTargetEntry != null) hasTargetEntry.close();
         if (targetPitchEntry != null) targetPitchEntry.close();
         if (targetAreaEntry != null) targetAreaEntry.close();

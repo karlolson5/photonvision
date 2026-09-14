@@ -50,6 +50,26 @@ public class AprilTagPipelineSettings extends AdvancedPipelineSettings {
                     .orElse(null);
     public boolean showDetectionBoxes = true;
 
+    // Lookahead (temporal ROI prediction) settings
+    /**
+     * When ML detection is enabled, skip the NPU detection stage on frames where recently-seen
+     * tags can be predicted with confidence, and decode only at the predicted locations instead.
+     */
+    public boolean useLookahead = false;
+
+    /**
+     * Padding (pixels) added around a predicted ROI before decoding. Larger than {@link
+     * #mlRoiPaddingPixels} by default since a prediction is less certain than a fresh NPU
+     * detection.
+     */
+    public int lookaheadPaddingPixels = 60;
+
+    /** How many consecutive unconfirmed frames a tag may coast on prediction before it's dropped. */
+    public int lookaheadMaxCoastFrames = 6;
+
+    /** Force a full NPU rescan at least this often, even if lookahead tracking looks healthy. */
+    public int lookaheadRescanIntervalFrames = 30;
+
     // Adaptive Tag Resizing (ATR) settings
     /** Enable adaptive tag resizing for ML-assisted detection */
     public boolean atrEnabled = true;
@@ -97,6 +117,11 @@ public class AprilTagPipelineSettings extends AdvancedPipelineSettings {
         result = prime * result + mlRoiPaddingPixels;
         result = prime * result + ((model.modelPath() == null) ? 0 : model.modelPath().hashCode());
         result = prime * result + (showDetectionBoxes ? 1231 : 1237);
+        // Lookahead fields
+        result = prime * result + (useLookahead ? 1231 : 1237);
+        result = prime * result + lookaheadPaddingPixels;
+        result = prime * result + lookaheadMaxCoastFrames;
+        result = prime * result + lookaheadRescanIntervalFrames;
         // ATR fields
         result = prime * result + (atrEnabled ? 1231 : 1237);
         result = prime * result + atrTargetDimension;
@@ -133,6 +158,11 @@ public class AprilTagPipelineSettings extends AdvancedPipelineSettings {
             if (other.model != null) return false;
         } else if (!model.equals(other.model)) return false;
         if (showDetectionBoxes != other.showDetectionBoxes) return false;
+        // Lookahead fields
+        if (useLookahead != other.useLookahead) return false;
+        if (lookaheadPaddingPixels != other.lookaheadPaddingPixels) return false;
+        if (lookaheadMaxCoastFrames != other.lookaheadMaxCoastFrames) return false;
+        if (lookaheadRescanIntervalFrames != other.lookaheadRescanIntervalFrames) return false;
         // ATR fields
         if (atrEnabled != other.atrEnabled) return false;
         if (atrTargetDimension != other.atrTargetDimension) return false;
